@@ -43,6 +43,25 @@ const deriveImpact = (label: string): Vector => {
   };
 };
 
+const fallbackSeeds = [
+  "ROOT_ACCESS",
+  "MAIN_CHARACTER",
+  "IMPOSTER_SYNDROME",
+  "GRINDSET",
+  "LOWKEY",
+  "LATE_BLOOMER",
+  "STREET_SMARTS",
+  "ADHD_BRAIN",
+  "PEOPLE_PLEASER",
+  "UNDERDOG",
+  "TECH_OBSESSED",
+  "CREATIVE_CORE",
+  "NO_SAFETY_NET",
+  "BETA_TESTER",
+  "LEGACY_CODE",
+  "SANDBOX_MODE",
+];
+
 const inflateTrait = (raw: { id: string | number; label: string; votes?: number }): Trait => ({
   id: String(raw.id ?? raw.label),
   label: raw.label.toUpperCase(),
@@ -171,10 +190,12 @@ export default function Home() {
         }
         const data = (await res.json()) as DbTrait[];
         if (!Array.isArray(data)) throw new Error("Bad payload");
-        setTraits(data.map(inflateTrait));
+        const hydrated = data.map(inflateTrait);
+        setTraits(hydrated.length ? hydrated : fallbackSeeds.map((label, idx) => inflateTrait({ id: idx, label })));
       } catch (err) {
         console.error(err);
         setError("CONFIG OFFLINE. CHECK SUPABASE URL/KEY & TABLE.");
+        setTraits(fallbackSeeds.map((label, idx) => inflateTrait({ id: idx, label })));
       }
     };
     load();
