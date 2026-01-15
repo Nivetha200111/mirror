@@ -11,7 +11,7 @@ import {
   BadgePercent,
   Cpu,
 } from "lucide-react";
-import { mentors } from "@/data/mentors";
+import { mentors as fallbackMentors } from "@/data/mentors";
 import { analyzeGap } from "@/utils/gapAnalyzer";
 import { attributeLabel, buildUserVector, findBestMentor } from "@/utils/matcher";
 import { ATTRIBUTE_KEYS, GapSummary, MatchResult, Trait, Vector } from "@/types";
@@ -69,6 +69,19 @@ const inflateTrait = (raw: { id: string | number; label: string; votes?: number 
   note: raw.votes ? `VOTES_${raw.votes}` : undefined,
   impact: deriveImpact(raw.label),
 });
+
+type LiveMentor = { id: string; name: string; bio: string; image?: string };
+
+const deriveMentorVector = (seed: string): Vector => {
+  const base = deriveImpact(seed);
+  return {
+    risk: base.risk,
+    network: base.network,
+    grind: base.grind,
+    education: base.education,
+    resilience: base.resilience,
+  };
+};
 
 const TraitTile = ({
   trait,
@@ -172,6 +185,7 @@ type DbTrait = { id: string | number; label: string; votes?: number };
 export default function Home() {
   const [traits, setTraits] = useState<Trait[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [mentorPool, setMentorPool] = useState(fallbackMentors);
   const [match, setMatch] = useState<MatchResult | null>(null);
   const [gap, setGap] = useState<GapSummary | null>(null);
   const [advice, setAdvice] = useState<string>("");
@@ -199,6 +213,30 @@ export default function Home() {
       }
     };
     load();
+  }, []);
+
+  useEffect(() => {
+    const loadMentors = async () => {
+      try {
+        const res = await fetch("/api/mentors");
+        if (!res.ok) return;
+        const data = (await res.json()) as LiveMentor[] | { error?: string };
+        if (!Array.isArray(data)) return;
+        const live = data.map((m) => ({
+          id: m.id,
+          name: m.name,
+          title: "LIVE_NODE",
+          image: m.image || "",
+          bio: m.bio || "",
+          traits: ["LIVE_FEED", "WIKIDATA"],
+          dna: deriveMentorVector(m.name),
+        }));
+        if (live.length) setMentorPool(live);
+      } catch (error) {
+        console.error("mentor load fail", error);
+      }
+    };
+    loadMentors();
   }, []);
 
   const selectedTraits = useMemo(
@@ -263,7 +301,7 @@ export default function Home() {
     }
 
     const userVector = buildUserVector(selectedTraits);
-    const nextMatch = findBestMentor(userVector, mentors);
+    const nextMatch = findBestMentor(userVector, mentorPool);
     const nextGap = analyzeGap(userVector, nextMatch.mentor.dna);
 
     setMatch(nextMatch);
