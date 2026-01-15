@@ -15,7 +15,7 @@ import { mentors as fallbackMentors } from "@/data/mentors";
 import { analyzeGap } from "@/utils/gapAnalyzer";
 import { attributeLabel, buildUserVector, findBestMentor } from "@/utils/matcher";
 import { ATTRIBUTE_KEYS, GapSummary, MatchResult, Trait, Vector } from "@/types";
-import { maxTraits, minTraits } from "@/data/traits";
+import { fallbackSeeds, maxTraits, minTraits } from "@/data/traits";
 
 const sectionMotion: MotionProps = {
   initial: { opacity: 0, y: 24, skewY: 2 },
@@ -42,25 +42,6 @@ const deriveImpact = (label: string): Vector => {
     resilience: clampScore(5 + n(9)),
   };
 };
-
-const fallbackSeeds = [
-  "ROOT_ACCESS",
-  "MAIN_CHARACTER",
-  "IMPOSTER_SYNDROME",
-  "GRINDSET",
-  "LOWKEY",
-  "LATE_BLOOMER",
-  "STREET_SMARTS",
-  "ADHD_BRAIN",
-  "PEOPLE_PLEASER",
-  "UNDERDOG",
-  "TECH_OBSESSED",
-  "CREATIVE_CORE",
-  "NO_SAFETY_NET",
-  "BETA_TESTER",
-  "LEGACY_CODE",
-  "SANDBOX_MODE",
-];
 
 const inflateTrait = (raw: { id: string | number; label: string; votes?: number }): Trait => ({
   id: String(raw.id ?? raw.label),

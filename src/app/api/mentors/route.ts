@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import { mentors as fallbackMentors } from "@/data/mentors";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const sparqlQuery = `
 SELECT ?person ?personLabel ?description ?image WHERE {
@@ -15,7 +19,7 @@ export async function GET() {
   try {
     const res = await fetch(`${endpoint}?query=${encodeURIComponent(sparqlQuery)}`, {
       headers: { Accept: "application/sparql-results+json" },
-      cache: "no-store",
+      next: { revalidate: 0 },
     });
 
     if (!res.ok) {
@@ -39,6 +43,6 @@ export async function GET() {
     return NextResponse.json(normalized);
   } catch (error) {
     console.error("mentor fetch error", error);
-    return NextResponse.json({ error: "MENTOR_FEED_FAIL" }, { status: 500 });
+    return NextResponse.json(fallbackMentors);
   }
 }
