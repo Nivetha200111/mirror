@@ -1,18 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, easeOut } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Sparkles,
-  Compass,
-  Wand2,
-  Check,
-  Plus,
-  Brain,
-  Loader2,
+  Zap,
+  Activity,
   Share2,
   RefreshCw,
-  Target,
+  ShieldCheck,
+  Triangle,
+  Gauge,
+  BadgePercent,
 } from "lucide-react";
 import { traits, maxTraits, minTraits } from "@/data/traits";
 import { mentors } from "@/data/mentors";
@@ -21,10 +19,10 @@ import { attributeLabel, buildUserVector, findBestMentor } from "@/utils/matcher
 import { ATTRIBUTE_KEYS, GapSummary, MatchResult, Trait } from "@/types";
 
 const sectionMotion = {
-  initial: { opacity: 0, y: 14 },
-  whileInView: { opacity: 1, y: 0 },
+  initial: { opacity: 0, y: 24, skewY: 2 },
+  whileInView: { opacity: 1, y: 0, skewY: 0 },
   viewport: { once: true },
-  transition: { duration: 0.4, ease: easeOut },
+  transition: { type: "spring", stiffness: 260, damping: 24 },
 };
 
 const TraitTile = ({
@@ -36,48 +34,27 @@ const TraitTile = ({
   selected: boolean;
   onToggle: (id: string) => void;
 }) => {
-  const initials = trait.label
-    .split(" ")
-    .map((word) => word[0])
-    .join("");
-
   return (
     <motion.button
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ x: [0, -3, 3, 0], skewX: [0, -2, 2, 0] }}
+      transition={{ duration: 0.24, repeat: 0, ease: [0.45, 0, 0.55, 1] }}
       onClick={() => onToggle(trait.id)}
-      className={`group relative flex flex-col gap-2 rounded-2xl border p-4 text-left shadow-lg transition-all ${
+      className={`group flex flex-col gap-2 border-2 p-4 text-left font-mono uppercase tracking-tight transition-all duration-150 sm:p-5 ${
         selected
-          ? "border-cyan-400/60 bg-cyan-400/5 shadow-cyan-500/20"
-          : "border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/10"
+          ? "border-[var(--accent)] bg-[var(--accent)] text-black shadow-[8px_8px_0_#ffffff40]"
+          : "border-white/70 bg-black text-white hover:border-[var(--accent)] hover:text-[var(--accent)]"
       }`}
     >
-      <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
-        <span>{trait.category}</span>
-        <span
-          className={`rounded-full px-2 py-1 text-[11px] font-medium ${
-            selected ? "bg-cyan-500/20 text-cyan-100" : "bg-slate-800 text-slate-300"
-          }`}
-        >
-          {selected ? "Selected" : "Tap to add"}
+      <div className="flex items-center justify-between text-xs">
+        <span className="font-bold">{trait.category}</span>
+        <span className="text-[10px] font-semibold opacity-70">
+          {selected ? "LOCKED" : "TAP"}
         </span>
       </div>
-      <div className="flex items-start gap-3">
-        <div
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-semibold ${
-            selected ? "bg-cyan-500/20 text-cyan-100" : "bg-slate-800 text-slate-200"
-          }`}
-        >
-          {initials}
-        </div>
-        <div className="space-y-1">
-          <div className="text-lg font-semibold text-slate-100">{trait.label}</div>
-          <p className="text-sm text-slate-400">{trait.note}</p>
-        </div>
-      </div>
-      <div className="absolute right-3 top-3 rounded-full border border-white/10 p-2 text-slate-200">
-        {selected ? <Check size={16} /> : <Plus size={16} />}
-      </div>
+      <div className="text-lg font-bold leading-tight sm:text-xl">{trait.label}</div>
+      <p className={`text-[12px] leading-snug ${selected ? "text-black/70" : "text-white/70"}`}>
+        {trait.note}
+      </p>
     </motion.button>
   );
 };
@@ -95,20 +72,20 @@ const AttributeMeter = ({
   const mentorPercent = Math.min(100, (mentorScore / 10) * 100);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-xs font-mono uppercase tracking-[0.16em] text-white/70">
         <span>{attributeLabel[attribute]}</span>
-        <span className="text-slate-300">
-          You {userScore}/10 · Mentor {mentorScore}/10
+        <span>
+          you {userScore}/10 · mentor {mentorScore}/10
         </span>
       </div>
-      <div className="relative h-3 overflow-hidden rounded-full bg-slate-900/60">
+      <div className="relative h-3 w-full border-2 border-white bg-black">
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-fuchsia-500/70 to-purple-500/70"
+          className="absolute inset-y-0 left-0 bg-[var(--hot)]"
           style={{ width: `${mentorPercent}%` }}
         />
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-400 to-sky-400"
+          className="absolute inset-y-0 left-0 bg-[var(--accent)]"
           style={{ width: `${userPercent}%` }}
         />
       </div>
@@ -130,22 +107,12 @@ export default function Home() {
     [selectedIds],
   );
 
-  const categorizedTraits = useMemo(() => {
-    const map = new Map<string, Trait[]>();
-    traits.forEach((trait) => {
-      map.set(trait.category, [...(map.get(trait.category) || []), trait]);
-    });
-    return Array.from(map.entries()).map(([category, items]) => ({ category, items }));
-  }, []);
-
   const toggleTrait = (id: string) => {
     setError(null);
     setSelectedIds((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((item) => item !== id);
-      }
+      if (prev.includes(id)) return prev.filter((item) => item !== id);
       if (prev.length >= maxTraits) {
-        setError(`Pick up to ${maxTraits} traits to keep it focused.`);
+        setError(`Pick ${maxTraits} max. Mirrors crack if you overload them.`);
         return prev;
       }
       return [...prev, id];
@@ -178,11 +145,11 @@ export default function Home() {
       }
 
       const data = (await res.json()) as { advice?: string };
-      setAdvice(data.advice || "We will craft your bridge once the AI is ready.");
+      setAdvice(data.advice || "Short. Blunt. Move now.");
     } catch (err) {
       console.error(err);
       setAdvice(
-        `Your biggest stretch is ${nextGap.attribute}. Steal ${nextMatch.mentor.name}'s habit: ship one small proof a week, ask two new people for help, and show receipts so your network compounds.`,
+        `${nextGap.attribute.toUpperCase()} fissure. Borrow ${nextMatch.mentor.name}'s habit: do one scary outreach daily, document proof, repeat until numb.`,
       );
     } finally {
       setLoadingAdvice(false);
@@ -191,7 +158,7 @@ export default function Home() {
 
   const handleMatch = async () => {
     if (selectedTraits.length < minTraits) {
-      setError(`Select at least ${minTraits} traits so the match means something.`);
+      setError(`Pick at least ${minTraits}. Too little signal.`);
       return;
     }
 
@@ -206,171 +173,158 @@ export default function Home() {
 
   const handleShare = async () => {
     if (!match || !gap) return;
-    const summary = `The Mirror matched me with ${match.mentor.name} (${match.mentor.title}). My bridge: focus on ${gap.attribute} to close the gap. Want to try it?`;
+    const summary = `The Mirror says I'm ${match.compatibility}% sync with ${match.mentor.name}. Fissure: ${gap.attribute}. What about you?`;
 
     try {
       if (navigator.share) {
-        await navigator.share({ title: "The Mirror Match", text: summary });
-        setShareMessage("Shared! Ping your circle.");
+        await navigator.share({ title: "The Mirror", text: summary });
+        setShareMessage("Shared. Let them look.");
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(summary);
-        setShareMessage("Copied. Drop it in WhatsApp/LinkedIn.");
+        setShareMessage("Copied. Drop it.");
       }
     } catch (err) {
       console.error(err);
-      setShareMessage("Could not share, but you can screenshot this card.");
+      setShareMessage("Could not share. Screenshot this screen instead.");
     } finally {
-      setTimeout(() => setShareMessage(null), 2200);
+      setTimeout(() => setShareMessage(null), 2400);
     }
   };
 
-  const gapLabel = gap ? `${attributeLabel[gap.attribute]} Gap` : "Bridge Card";
+  const gapLabel = gap ? `THE FISSURE: ${attributeLabel[gap.attribute].toUpperCase()}` : "THE FISSURE";
 
   return (
-    <div className="min-h-screen bg-slate-950 pb-16 text-slate-50">
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 pt-10 sm:px-6 lg:px-10">
+    <div className="min-h-screen bg-black text-white">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 pb-16 pt-10 sm:px-6 lg:px-10">
         <motion.header
           {...sectionMotion}
-          className="flex flex-col gap-6 rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl shadow-cyan-500/10 sm:p-8 lg:p-10"
+          className="border-2 border-white bg-black p-6 shadow-[10px_10px_0_#ccff00] sm:p-8"
         >
-          <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-cyan-200">
-            <span className="flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1">
-              <Sparkles size={14} />
-              The Mirror 1.0
+          <div className="flex flex-wrap items-center gap-3 text-xs font-mono uppercase tracking-[0.3em] text-white/80">
+            <span className="flex items-center gap-2 bg-white px-3 py-1 font-bold text-black">
+              <Zap size={14} /> The Mirror
             </span>
-            <span className="text-slate-400">Tinder for Success</span>
-            <span className="text-slate-400">Indian Origin Stories → Mentors</span>
+            <span className="px-2 py-1">Brutalist Digital Mirror</span>
+            <span className="px-2 py-1 text-[var(--accent)]">Zero corporate vibes</span>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="space-y-4">
-              <h1 className="text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-                Match your struggles to a global great.
-              </h1>
-              <p className="max-w-2xl text-base text-slate-300 sm:text-lg">
-                Pick 3-5 traits, get a mentor whose DNA mirrors your journey, and an AI-crafted bridge to close your biggest gap.
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-[var(--accent)]">The Inventory</p>
+              <h1 className="text-4xl font-extrabold leading-none sm:text-5xl md:text-6xl">WHO ARE YOU?</h1>
+              <p className="max-w-2xl text-base leading-relaxed text-white/80">
+                Tap 3-5 vibes. No polite corporate forms. This mirror wants the raw feed.
               </p>
-              <div className="flex flex-wrap gap-3 text-sm text-slate-300">
-                <span className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
-                  <Compass size={15} /> 5D Vector Matching
-                </span>
-                <span className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
-                  <Brain size={15} /> GPT-4o-mini Advice
-                </span>
-                <span className="flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
-                  <Target size={15} /> Share-ready card
-                </span>
+              <div className="flex flex-wrap gap-3 text-sm font-mono uppercase">
+                <span className="border-2 border-white px-3 py-2">Acid Green + Hot Pink</span>
+                <span className="border-2 border-white px-3 py-2">Sharp edges only</span>
+                <span className="border-2 border-white px-3 py-2">No fluff</span>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
-              <div className="flex items-center gap-2 text-cyan-200">
-                <Wand2 size={18} /> 10,000 user launch goal
+            <div className="flex flex-col gap-3 border-2 border-white bg-white/5 p-4 font-mono uppercase tracking-[0.2em] text-sm text-white">
+              <div className="flex items-center gap-2 text-[var(--accent)]">
+                <ShieldCheck size={16} /> Real recognizes raw
               </div>
-              <p className="text-slate-400">Built for Indian middle-class ambition.</p>
+              <p className="leading-snug text-white/80">
+                The Mirror maps your chaos to a mentor. Then exposes the fissure you need to weld.
+              </p>
             </div>
           </div>
         </motion.header>
 
-        <motion.section {...sectionMotion} className="space-y-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Module A</p>
-              <h2 className="text-2xl font-semibold">Your Origin Story</h2>
-              <p className="text-slate-400">Select 3-5 cards that scream who you are right now.</p>
+        <motion.section {...sectionMotion} className="space-y-5" id="inventory">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/70">Page 1</p>
+              <h2 className="text-2xl font-bold">The Inventory</h2>
+              <p className="text-sm text-white/70">Pick the vibes that actually match you.</p>
             </div>
-            <div className="flex gap-2 text-sm text-slate-300">
-              <span className="rounded-full bg-white/5 px-3 py-1">Min {minTraits}</span>
-              <span className="rounded-full bg-white/5 px-3 py-1">Max {maxTraits}</span>
+            <div className="flex gap-2 font-mono text-xs uppercase">
+              <span className="border-2 border-white px-3 py-2">Min {minTraits}</span>
+              <span className="border-2 border-white px-3 py-2">Max {maxTraits}</span>
             </div>
           </div>
 
-          <div className="grid gap-4">
-            {categorizedTraits.map(({ category, items }) => (
-              <div key={category} className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <div className="h-px w-6 bg-gradient-to-r from-cyan-400 to-fuchsia-500" />
-                  <span className="uppercase tracking-[0.2em] text-slate-400">{category}</span>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {items.map((trait) => (
-                    <TraitTile
-                      key={trait.id}
-                      trait={trait}
-                      selected={selectedIds.includes(trait.id)}
-                      onToggle={toggleTrait}
-                    />
-                  ))}
-                </div>
-              </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {traits.map((trait) => (
+              <TraitTile
+                key={trait.id}
+                trait={trait}
+                selected={selectedIds.includes(trait.id)}
+                onToggle={toggleTrait}
+              />
             ))}
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-              <Target size={16} /> {error}
+            <div className="flex items-center gap-2 border-2 border-[var(--hot)] bg-[var(--hot)]/10 px-4 py-3 text-sm font-mono uppercase text-[var(--hot)]">
+              <Triangle size={16} /> {error}
             </div>
           )}
 
           <div className="flex flex-wrap gap-3">
             <button
               onClick={handleMatch}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-fuchsia-500 px-6 py-3 text-base font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 transition hover:-translate-y-[1px] hover:shadow-xl hover:shadow-fuchsia-500/20"
+              className="inline-flex items-center gap-2 border-2 border-white bg-white px-5 py-3 font-bold uppercase tracking-[0.2em] text-black shadow-[6px_6px_0_#ccff00] transition hover:-translate-y-[1px]"
             >
-              <Sparkles size={18} /> Find my mentor
+              <Activity size={16} /> Check Mirror
             </button>
             <button
               onClick={reset}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-5 py-3 text-sm text-slate-200 hover:border-white/30"
+              className="inline-flex items-center gap-2 border-2 border-white px-5 py-3 font-bold uppercase tracking-[0.2em] text-white transition hover:text-[var(--accent)]"
             >
-              <RefreshCw size={16} /> Reset
+              <RefreshCw size={16} /> Clear
             </button>
             {selectedTraits.length > 0 && (
-              <div className="flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-xs text-slate-300">
-                {selectedTraits.length} selected
+              <div className="flex items-center gap-2 border-2 border-white px-4 py-2 font-mono text-xs uppercase text-white/80">
+                {selectedTraits.length} locked in
               </div>
             )}
           </div>
         </motion.section>
 
         {match && gap && (
-          <motion.section {...sectionMotion} className="space-y-4" id="result">
-            <div className="flex items-center justify-between">
+          <motion.section {...sectionMotion} className="space-y-4" id="reflection">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Modules B, C & D</p>
-                <h2 className="text-2xl font-semibold">Your Match & Bridge</h2>
-                <p className="text-slate-400">Vector math + AI strategy. Save this card for WhatsApp/LinkedIn.</p>
+                <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/70">Page 2</p>
+                <h2 className="text-2xl font-bold">The Reflection</h2>
+                <p className="text-sm text-white/70">No congratulations. Just the readout.</p>
               </div>
               <button
                 onClick={handleShare}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-100 hover:border-cyan-400/50"
+                className="inline-flex items-center gap-2 border-2 border-white px-4 py-2 font-bold uppercase tracking-[0.2em] text-white hover:text-[var(--accent)]"
               >
-                <Share2 size={16} /> Share / Copy
+                <Share2 size={16} /> Broadcast
               </button>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.7fr_1.2fr]">
-              <div className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl shadow-cyan-500/10 md:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="grid gap-6 lg:grid-cols-[1.6fr_1.2fr]">
+              <div className="space-y-5 border-2 border-white bg-black p-6 shadow-[10px_10px_0_#ff1f8f] md:p-7">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-2">
-                    <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Your Mentor</p>
-                    <h3 className="text-3xl font-semibold text-white">{match.mentor.name}</h3>
-                    <p className="text-lg text-cyan-200">{match.mentor.title}</p>
-                    <p className="max-w-xl text-slate-300">{match.mentor.bio}</p>
-                    <div className="flex flex-wrap gap-2 text-xs text-slate-300">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent)]">Your mirror match</p>
+                    <h3 className="text-3xl font-extrabold">{match.mentor.name}</h3>
+                    <p className="text-lg text-white/80">{match.mentor.title}</p>
+                    <p className="max-w-xl text-sm text-white/70">{match.mentor.bio}</p>
+                    <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase text-white/70">
                       {match.mentor.traits.map((trait) => (
-                        <span key={trait} className="rounded-full bg-white/5 px-3 py-1">
+                        <span key={trait} className="border border-white px-2 py-1">
                           {trait}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 text-right">
-                    <span className="text-sm uppercase tracking-[0.2em] text-slate-400">Compatibility</span>
-                    <div className="text-5xl font-bold text-cyan-300">{match.compatibility}%</div>
-                    <span className="text-slate-400">Lower distance = tighter fit</span>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-white/60">Sync</span>
+                    <div className="flex items-center gap-2 text-5xl font-extrabold text-[var(--accent)]">
+                      {match.compatibility}%
+                      <BadgePercent size={28} />
+                    </div>
+                    <span className="text-xs font-mono uppercase text-white/60">Lower distance = tighter sync</span>
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4">
+                <div className="grid gap-3">
                   {ATTRIBUTE_KEYS.map((attribute) => (
                     <AttributeMeter
                       key={attribute}
@@ -382,57 +336,46 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="flex h-full flex-col gap-4">
-                <div className="relative overflow-hidden rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/20 via-slate-900 to-fuchsia-500/20 p-6 shadow-xl">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#22d3ee22,transparent_30%),radial-gradient(circle_at_80%_0%,#a855f722,transparent_32%)]" />
-                  <div className="relative flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-xs uppercase tracking-[0.25em] text-cyan-100">The Bridge</p>
-                        <h3 className="text-2xl font-semibold text-white">{gapLabel}</h3>
-                        <p className="text-slate-200">
-                          {gap.delta > 0
-                            ? `${match.mentor.name} scores ${gap.delta.toFixed(1)} points higher here.`
-                            : `You are neck and neck here—keep pushing to stay ahead.`}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-white/10 px-4 py-3 text-right">
-                        <p className="text-xs uppercase tracking-[0.25em] text-slate-200">Delta</p>
-                        <p className="text-3xl font-bold text-white">{Math.max(gap.delta, 0).toFixed(1)}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="flex items-center gap-2 text-sm text-cyan-100">
-                        <Brain size={16} /> AI Strategy
-                      </div>
-                      <p className="text-sm leading-relaxed text-slate-100">
-                        {loadingAdvice ? (
-                          <span className="flex items-center gap-2 text-cyan-200">
-                            <Loader2 className="animate-spin" size={16} /> Thinking like a blunt desi mentor...
-                          </span>
-                        ) : (
-                          advice
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-                      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-300">
-                        <Wand2 size={14} /> Screenshot ready
-                      </div>
-                      <p className="text-slate-200">
-                        Save and share this card on WhatsApp or LinkedIn to unlock the hidden mentor drop. No fluff—just the bridge.
-                      </p>
-                      <button
-                        onClick={handleShare}
-                        className="inline-flex w-fit items-center gap-2 rounded-full bg-white text-slate-900 px-4 py-2 text-sm font-semibold shadow-md hover:-translate-y-[1px] hover:shadow-lg"
-                      >
-                        <Share2 size={16} /> Share / Copy
-                      </button>
-                      {shareMessage && <span className="text-xs text-cyan-100">{shareMessage}</span>}
-                    </div>
+              <div className="space-y-4 border-2 border-white bg-black p-6 shadow-[10px_10px_0_#ccff00]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent)]">The Reflection</p>
+                    <h3 className="text-xl font-extrabold text-white">{gapLabel}</h3>
+                    <p className="text-sm text-white/70">
+                      {gap.delta > 0
+                        ? `${match.mentor.name} sits ${gap.delta.toFixed(1)} points higher here.`
+                        : "Neck and neck. Don't relax."}
+                    </p>
                   </div>
+                  <div className="border-2 border-white px-4 py-3 text-right">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/60">Delta</p>
+                    <p className="text-3xl font-extrabold text-[var(--hot)]">{Math.max(gap.delta, 0).toFixed(1)}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 border-2 border-white bg-white/5 p-4">
+                  <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-[var(--accent)]">
+                    <Gauge size={14} /> The fissure note
+                  </div>
+                  <p className="text-sm leading-relaxed text-white">
+                    {loadingAdvice ? "Calibrating..." : advice}
+                  </p>
+                </div>
+
+                <div className="space-y-2 border-2 border-white bg-white/5 p-4 font-mono text-xs uppercase tracking-[0.2em] text-white">
+                  <div className="flex items-center gap-2 text-[var(--hot)]">
+                    <Triangle size={14} /> Screenshot this. Blast it.
+                  </div>
+                  <p className="text-white/80">
+                    The Mirror is a brag and a dare. Post the sync score and fissure on your story.
+                  </p>
+                  <button
+                    onClick={handleShare}
+                    className="inline-flex w-fit items-center gap-2 border-2 border-white bg-white px-3 py-2 font-bold tracking-[0.2em] text-black shadow-[5px_5px_0_#ff1f8f] transition hover:-translate-y-[1px]"
+                  >
+                    <Share2 size={16} /> Broadcast
+                  </button>
+                  {shareMessage && <span className="text-[11px] text-[var(--accent)]">{shareMessage}</span>}
                 </div>
               </div>
             </div>
