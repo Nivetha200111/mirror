@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, type MotionProps } from "framer-motion";
 import {
   Zap,
   Activity,
@@ -18,7 +18,7 @@ import { analyzeGap } from "@/utils/gapAnalyzer";
 import { attributeLabel, buildUserVector, findBestMentor } from "@/utils/matcher";
 import { ATTRIBUTE_KEYS, GapSummary, MatchResult, Trait } from "@/types";
 
-const sectionMotion = {
+const sectionMotion: MotionProps = {
   initial: { opacity: 0, y: 24, skewY: 2 },
   whileInView: { opacity: 1, y: 0, skewY: 0 },
   viewport: { once: true },
