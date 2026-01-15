@@ -5,7 +5,7 @@ export type Vector = Record<AttributeKey, number>;
 export interface Trait {
   id: string;
   label: string;
-  category: "Origin" | "Economic" | "Social" | "Career" | "Habits";
+  category: "Origin" | "Economic" | "Social" | "Career" | "Habits" | "Vibe";
   note?: string;
   impact: Vector;
 }
