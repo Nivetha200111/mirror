@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, easeOut } from "framer-motion";
 import {
   Sparkles,
   Compass,
@@ -24,7 +24,7 @@ const sectionMotion = {
   initial: { opacity: 0, y: 14 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true },
-  transition: { duration: 0.4, ease: "easeOut" },
+  transition: { duration: 0.4, ease: easeOut },
 };
 
 const TraitTile = ({
