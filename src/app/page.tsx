@@ -214,11 +214,6 @@ export default function Home() {
               <p className="max-w-2xl text-base leading-relaxed text-white/80">
                 Tap 3-5 vibes. No polite corporate forms. This mirror wants the raw feed.
               </p>
-              <div className="flex flex-wrap gap-3 text-sm font-mono uppercase">
-                <span className="border-2 border-white px-3 py-2">Acid Green + Hot Pink</span>
-                <span className="border-2 border-white px-3 py-2">Sharp edges only</span>
-                <span className="border-2 border-white px-3 py-2">No fluff</span>
-              </div>
             </div>
             <div className="flex flex-col gap-3 border-2 border-white bg-white/5 p-4 font-mono uppercase tracking-[0.2em] text-sm text-white">
               <div className="flex items-center gap-2 text-[var(--accent)]">
