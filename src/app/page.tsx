@@ -165,12 +165,16 @@ export default function Home() {
     const load = async () => {
       try {
         const res = await fetch("/api/traits");
+        if (!res.ok) {
+          const info = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(info.error || `HTTP_${res.status}`);
+        }
         const data = (await res.json()) as DbTrait[];
         if (!Array.isArray(data)) throw new Error("Bad payload");
         setTraits(data.map(inflateTrait));
       } catch (err) {
         console.error(err);
-        setError("CONFIG OFFLINE. LOAD ENV.");
+        setError("CONFIG OFFLINE. CHECK SUPABASE URL/KEY & TABLE.");
       }
     };
     load();
