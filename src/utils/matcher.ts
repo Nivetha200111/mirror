@@ -1,4 +1,4 @@
-import { ATTRIBUTE_KEYS, MatchResult, Mentor, Trait, Vector } from "@/types";
+import { ATTRIBUTE_KEYS, MatchResult, Mentor, MultiMatchResult, Trait, UserTraitSelection, Vector } from "@/types";
 
 const BASELINE_SCORE = 5;
 const MAX_SCORE = 10;
@@ -13,12 +13,17 @@ const baseVector: Vector = {
 
 const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
 
-export const buildUserVector = (selectedTraits: Trait[]): Vector => {
+export const buildUserVector = (selectedTraits: Trait[], selections?: UserTraitSelection[]): Vector => {
   const merged: Vector = { ...baseVector };
 
   for (const trait of selectedTraits) {
+    // Find intensity multiplier if available
+    const selection = selections?.find(s => s.traitId === trait.id);
+    const intensityMultiplier = selection ? selection.intensity / 100 : 1;
+
     for (const key of ATTRIBUTE_KEYS) {
-      merged[key] = clampScore(merged[key] + trait.impact[key]);
+      const impactValue = trait.impact[key] * intensityMultiplier;
+      merged[key] = clampScore(merged[key] + impactValue);
     }
   }
 
@@ -61,6 +66,34 @@ export const findBestMentor = (
   });
 
   return best!;
+};
+
+export const findMultipleMentors = (
+  userVector: Vector,
+  mentorPool: Mentor[],
+  topN: number = 3,
+): MultiMatchResult => {
+  if (!mentorPool.length) {
+    throw new Error("Mentor dataset is empty");
+  }
+
+  const allMatches: MatchResult[] = mentorPool.map((mentor) => {
+    const distance = euclideanDistance(userVector, mentor.dna);
+    const compatibility = distanceToCompatibility(distance);
+    return { mentor, distance, compatibility, userVector };
+  });
+
+  // Sort by distance (ascending = best match first)
+  allMatches.sort((a, b) => a.distance - b.distance);
+
+  const topMatches = allMatches.slice(0, topN);
+  const antiMentor = allMatches[allMatches.length - 1]; // Worst match
+
+  return {
+    topMatches,
+    antiMentor,
+    userVector,
+  };
 };
 
 export const attributeLabel: Record<keyof Vector, string> = {
