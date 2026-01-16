@@ -23,7 +23,7 @@ export interface UserTraitSelection {
 export interface Mentor {
   id: string;
   name: string;
-  level: number; // 1 (Pre-seed) to 5 (Unicorn)
+  level?: number; // Optional: 1 (Pre-seed) to 5 (Unicorn)
   title: string;
   image: string;
   bio: string;

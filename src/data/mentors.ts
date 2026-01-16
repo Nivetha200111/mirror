@@ -4,6 +4,7 @@ export const mentors: Mentor[] = [
   {
     id: "elon-musk",
     name: "Elon Musk",
+    level: 5,
     title: "SYSTEM BUILDER",
     image: "",
     bio: "Overclocked operator shipping rockets, cars, and code on brutal timelines.",
@@ -23,6 +24,7 @@ export const mentors: Mentor[] = [
   {
     id: "paul-graham",
     name: "Paul Graham",
+    level: 4,
     title: "PROTOCOL WRITER",
     image: "",
     bio: "Hacker-essayist wiring founders to think in clear loops and ship fast.",
@@ -42,6 +44,7 @@ export const mentors: Mentor[] = [
   {
     id: "linus-torvalds",
     name: "Linus Torvalds",
+    level: 4,
     title: "KERNEL ARCHITECT",
     image: "",
     bio: "Shipped Linux as a hobby patch; now runs the kernel playbook for the planet.",
@@ -60,6 +63,7 @@ export const mentors: Mentor[] = [
   {
     id: "grace-hopper",
     name: "Grace Hopper",
+    level: 5,
     title: "COMPILER GENERAL",
     image: "",
     bio: "Pioneer who treated computers like ships and invented the COBOL highway.",
@@ -78,6 +82,7 @@ export const mentors: Mentor[] = [
   {
     id: "ada-lovelace",
     name: "Ada Lovelace",
+    level: 4,
     title: "ALGORITHM ORACLE",
     image: "",
     bio: "Mapped poetry to numbers; imagined computing long before silicon.",
@@ -96,6 +101,7 @@ export const mentors: Mentor[] = [
   {
     id: "steve-wozniak",
     name: "Steve Wozniak",
+    level: 4,
     title: "HARDWARE HACKER",
     image: "",
     bio: "Garage engineer who turned schematics into machines people could touch.",
