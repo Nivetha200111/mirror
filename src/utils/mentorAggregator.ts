@@ -42,11 +42,11 @@ export interface ScoredFounder extends RawFounder {
 export function scoreFounder(founder: RawFounder): { level: number; dna: Vector } {
   let score = 0;
   const dna: Vector = {
-    risk: 5,
-    network: 5,
-    grind: 5,
-    education: 5,
-    resilience: 5,
+    risk: 4,      // Founders start slightly above student baseline (3)
+    network: 4,
+    grind: 4,
+    education: 4,
+    resilience: 4,
   };
 
   // Parse funding amount
@@ -62,32 +62,32 @@ export function scoreFounder(founder: RawFounder): { level: number; dna: Vector 
     // Funding levels
     if (fundingMillions < 1) {
       score = 1; // Pre-seed
-      dna.risk = 9;
-      dna.grind = 9;
+      dna.risk = 7;  // High, but reachable
+      dna.grind = 8; // Hustle is main asset
     } else if (fundingMillions < 5) {
       score = 2; // Seed
-      dna.risk = 9;
-      dna.network = 6;
+      dna.risk = 8;
+      dna.network = 5;
       dna.grind = 8;
     } else if (fundingMillions < 20) {
       score = 3; // Series A
       dna.risk = 8;
-      dna.network = 7;
+      dna.network = 6;
       dna.grind = 8;
-      dna.resilience = 7;
+      dna.resilience = 6;
     } else if (fundingMillions < 100) {
       score = 4; // Series B+
-      dna.risk = 8;
+      dna.risk = 9;
       dna.network = 8;
-      dna.grind = 8;
+      dna.grind = 9;
       dna.resilience = 8;
     } else {
       score = 5; // Unicorn+
-      dna.risk = 9;
-      dna.network = 9;
-      dna.grind = 9;
-      dna.resilience = 9;
-      dna.education = 8;
+      dna.risk = 10; // The elite
+      dna.network = 10;
+      dna.grind = 10;
+      dna.resilience = 10;
+      dna.education = 9;
     }
   }
 
@@ -140,6 +140,7 @@ export function founderToMentor(founder: RawFounder): Mentor {
   return {
     id: founder.name.toLowerCase().replace(/\s+/g, '-'),
     name: founder.name,
+    level,
     title: `${founder.company} · ${levelTitles[level - 1] || "Founder"}`,
     image: "",
     bio: founder.description || `Founded ${founder.company}${founder.founded ? ` in ${founder.founded}` : ''}. ${founder.funding ? `Raised ${founder.funding}.` : ''}${founder.batch ? ` YC ${founder.batch}.` : ''}`,
@@ -208,7 +209,7 @@ export async function fetchWikidataEntrepreneurs(limit = 50): Promise<RawFounder
 
     const data = await response.json();
 
-    return data.results.bindings.map((binding: { personLabel?: { value: string }; companyLabel?: { value: string }; founded?: { value: string } }) => ({
+    return data.results.bindings.map((binding: any) => ({
       name: binding.personLabel?.value || 'Unknown',
       company: binding.companyLabel?.value || 'Unknown Company',
       founded: binding.founded?.value?.substring(0, 4),

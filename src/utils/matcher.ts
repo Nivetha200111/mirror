@@ -1,6 +1,6 @@
 import { ATTRIBUTE_KEYS, MatchResult, Mentor, MultiMatchResult, Trait, UserTraitSelection, Vector } from "@/types";
 
-const BASELINE_SCORE = 5;
+const BASELINE_SCORE = 3; // Lowered from 5 to reflect "Level 0" (Student/Beginner) starting point
 const MAX_SCORE = 10;
 
 const baseVector: Vector = {
