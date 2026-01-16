@@ -15,10 +15,11 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { mentors as fallbackMentors } from "@/data/mentors";
+import { realMentors } from "@/data/realMentors";
 import { analyzeGapEnhanced } from "@/utils/enhancedGapAnalyzer";
 import { attributeLabel, buildUserVector, findMultipleMentors } from "@/utils/matcher";
 import { ProgressTracker } from "./ProgressTracker";
+import { OrgChartLadder } from "./OrgChartLadder";
 import {
   ATTRIBUTE_KEYS,
   EnhancedGapAnalysis,
@@ -67,18 +68,14 @@ const inflateTrait = (raw: { id: string | number; label: string; votes?: number 
   };
 };
 
-type LiveMentor = { id: string; name: string; bio: string; image?: string };
-
-const deriveMentorVector = (seed: string): Vector => {
-  return deriveImpact(seed);
-};
+// Removed unused LiveMentor and deriveMentorVector
 
 export default function EnhancedMirror() {
   const [stage, setStage] = useState<Stage>("selection");
   const [traits, setTraits] = useState<Trait[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [userSelections, setUserSelections] = useState<UserTraitSelection[]>([]);
-  const [mentorPool, setMentorPool] = useState(fallbackMentors);
+  const [mentorPool, setMentorPool] = useState(realMentors);
   const [multiMatch, setMultiMatch] = useState<MultiMatchResult | null>(null);
   const [gapAnalysis, setGapAnalysis] = useState<EnhancedGapAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,22 +106,21 @@ export default function EnhancedMirror() {
   useEffect(() => {
     const loadMentors = async () => {
       try {
-        const res = await fetch("/api/mentors");
-        if (!res.ok) return;
-        const data = (await res.json()) as LiveMentor[] | { error?: string };
-        if (!Array.isArray(data)) return;
-        const live = data.map((m) => ({
-          id: m.id,
-          name: m.name,
-          title: "LIVE_NODE",
-          image: m.image || "",
-          bio: m.bio || "",
-          traits: ["LIVE_FEED", "WIKIDATA"],
-          dna: deriveMentorVector(m.name),
-        }));
-        if (live.length) setMentorPool(live);
+        // Try live API first
+        const res = await fetch("/api/mentors-live?limit=100&includeStatic=true");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.mentors && Array.isArray(data.mentors)) {
+            console.log(`[MENTORS] Loaded ${data.mentors.length} mentors (cached: ${data.cached})`);
+            setMentorPool(data.mentors);
+            return;
+          }
+        }
+
+        // Fallback to realMentors if live API fails
+        console.log("[MENTORS] Using static mentors");
       } catch (error) {
-        console.error("mentor load fail", error);
+        console.error("[MENTORS] Load error:", error);
       }
     };
     loadMentors();
@@ -704,7 +700,14 @@ function AnalysisStage({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      {/* THE CAREER LADDER - Visual org chart */}
+      <div className="space-y-2">
+        <h3 className="text-2xl font-bold">THE LADDER BETWEEN YOU</h3>
+        <p className="text-white/70">Every level is real. This is what it actually takes.</p>
+      </div>
+      <OrgChartLadder userVector={currentMatch.userVector} mentor={currentMatch.mentor} />
+
+      <div className="flex items-center justify-between border-t-2 border-white/20 pt-6">
         <button
           onClick={handlePrev}
           className="flex items-center gap-2 border-2 border-white px-6 py-3 font-bold text-white transition hover:bg-white hover:text-black"
