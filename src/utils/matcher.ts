@@ -11,6 +11,16 @@ const baseVector: Vector = {
   resilience: BASELINE_SCORE,
 };
 
+// Weights allow us to prioritize certain attributes over others.
+// e.g., Risk alignment might be 1.5x more important than Education.
+const ATTRIBUTE_WEIGHTS: Vector = {
+  risk: 1.5,
+  network: 1.0,
+  grind: 1.2,
+  education: 0.8,
+  resilience: 1.0,
+};
+
 const clampScore = (value: number) => Math.min(MAX_SCORE, Math.max(0, value));
 
 export const buildUserVector = (selectedTraits: Trait[], selections?: UserTraitSelection[]): Vector => {
@@ -33,13 +43,16 @@ export const buildUserVector = (selectedTraits: Trait[], selections?: UserTraitS
 export const euclideanDistance = (a: Vector, b: Vector) => {
   const sumSq = ATTRIBUTE_KEYS.reduce((acc, key) => {
     const diff = a[key] - b[key];
-    return acc + diff * diff;
+    const weight = ATTRIBUTE_WEIGHTS[key];
+    return acc + (weight * (diff * diff));
   }, 0);
 
   return Math.sqrt(sumSq);
 };
 
-const MAX_DISTANCE = Math.sqrt(ATTRIBUTE_KEYS.length * (MAX_SCORE * MAX_SCORE));
+const MAX_DISTANCE = Math.sqrt(
+  ATTRIBUTE_KEYS.reduce((acc, key) => acc + ATTRIBUTE_WEIGHTS[key] * (MAX_SCORE * MAX_SCORE), 0)
+);
 
 const distanceToCompatibility = (distance: number) => {
   const ratio = 1 - distance / MAX_DISTANCE;
@@ -86,7 +99,21 @@ export const findMultipleMentors = (
   // Sort by distance (ascending = best match first)
   allMatches.sort((a, b) => a.distance - b.distance);
 
-  const topMatches = allMatches.slice(0, topN);
+  // Apply Softmax to top N matches to get relative probabilities
+  // RankNet Logic: P_i = exp(-distance_i) / sum(exp(-distance_j))
+  let topMatches = allMatches.slice(0, topN);
+  
+  const scores = topMatches.map(m => -m.distance); // Negative because lower distance is better
+  // Shift scores for numerical stability (optional but good practice)
+  const maxScore = Math.max(...scores); 
+  const expScores = scores.map(s => Math.exp(s - maxScore));
+  const sumExp = expScores.reduce((a, b) => a + b, 0);
+
+  topMatches = topMatches.map((match, index) => ({
+    ...match,
+    matchProbability: parseFloat((expScores[index] / sumExp).toFixed(4))
+  }));
+
   const antiMentor = allMatches[allMatches.length - 1]; // Worst match
 
   return {

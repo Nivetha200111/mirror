@@ -49,6 +49,7 @@ export interface MatchResult {
   distance: number;
   compatibility: number;
   userVector: Vector;
+  matchProbability?: number; // Softmax probability among top candidates
 }
 
 export interface MultiMatchResult {
@@ -105,6 +106,20 @@ export interface AdvicePayload {
   userSelections?: UserTraitSelection[];
   mentor: Mentor;
   gap: GapSummary;
+}
+
+export interface MatchFeedback {
+  userId?: string;
+  userVector: Vector;
+  candidates: {
+    mentorId: string;
+    distance: number;
+    compatibility: number;
+    matchProbability?: number;
+    rank: number; // The order they were displayed (0, 1, 2...)
+  }[];
+  selectedMentorId: string; // The "Winner" (Ground Truth)
+  timestamp: number;
 }
 
 export const ATTRIBUTE_KEYS: AttributeKey[] = [
