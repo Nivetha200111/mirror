@@ -1,10 +1,10 @@
 import "server-only";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AdvicePayload } from "@/types";
 
-const openaiClient = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  : null;
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : undefined;
 
 export const buildAdvicePrompt = (payload: AdvicePayload) => {
   const { userTraits, mentor, gap } = payload;
@@ -26,24 +26,21 @@ const fallbackAdvice = (payload: AdvicePayload) => {
 export const getAdvice = async (payload: AdvicePayload) => {
   const prompt = buildAdvicePrompt(payload);
 
-  if (!openaiClient) {
+  if (!genAI) {
     return fallbackAdvice(payload);
   }
 
-  const response = await openaiClient.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.6,
-    max_tokens: 180,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a direct career coach from India. Be concise, specific, and culturally aware. No disclaimers.",
-      },
-      { role: "user", content: prompt },
-    ],
-  });
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash",
+      systemInstruction: "You are a direct career coach from India. Be concise, specific, and culturally aware. No disclaimers. Speak with authority.",
+    });
 
-  const content = response.choices[0]?.message?.content?.trim();
-  return content?.length ? content : fallbackAdvice(payload);
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text() || fallbackAdvice(payload);
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    return fallbackAdvice(payload);
+  }
 };
