@@ -209,7 +209,11 @@ export async function fetchWikidataEntrepreneurs(limit = 50): Promise<RawFounder
 
     const data = await response.json();
 
-    return data.results.bindings.map((binding: any) => ({
+    return data.results.bindings.map((binding: {
+      personLabel?: { value: string };
+      companyLabel?: { value: string };
+      founded?: { value: string };
+    }) => ({
       name: binding.personLabel?.value || 'Unknown',
       company: binding.companyLabel?.value || 'Unknown Company',
       founded: binding.founded?.value?.substring(0, 4),
