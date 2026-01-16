@@ -1,9 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Vector } from "@/types";
-
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : undefined;
 
 /**
  * The "Vibe Check"
@@ -12,17 +7,13 @@ const genAI = process.env.GEMINI_API_KEY
  * and extract personality traits automatically.
  */
 export const analyzeVisualVibe = async (imageBase64: string): Promise<Partial<Vector>> => {
-  if (!genAI) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     console.warn("Gemini API key missing");
     return {};
   }
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: { responseMimeType: "application/json" }
-    });
-
     const prompt = `
       Analyze this image for entrepreneurial traits. 
       If it's a workspace: look for organization (Grind) or chaos (Creativity/Risk).
@@ -33,18 +24,28 @@ export const analyzeVisualVibe = async (imageBase64: string): Promise<Partial<Ve
       Only return keys where you have strong visual evidence.
     `;
 
-    const imagePart = {
-      inlineData: {
-        data: imageBase64,
-        mimeType: "image/jpeg",
-      },
-    };
+    // Using REST API directly to avoid build errors with missing @google/generative-ai package
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: "image/jpeg", data: imageBase64 } }
+            ]
+          }],
+          generationConfig: { responseMimeType: "application/json" }
+        }),
+      }
+    );
 
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    const text = response.text();
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
-    return JSON.parse(text) as Partial<Vector>;
+    return text ? JSON.parse(text) : {};
   } catch (error) {
     console.error("Visual Vibe Check failed:", error);
     return {};

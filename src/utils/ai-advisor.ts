@@ -1,10 +1,5 @@
 import "server-only";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AdvicePayload } from "@/types";
-
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : undefined;
 
 export const buildAdvicePrompt = (payload: AdvicePayload) => {
   const { userTraits, mentor, gap } = payload;
@@ -26,19 +21,35 @@ const fallbackAdvice = (payload: AdvicePayload) => {
 export const getAdvice = async (payload: AdvicePayload) => {
   const prompt = buildAdvicePrompt(payload);
 
-  if (!genAI) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
     return fallbackAdvice(payload);
   }
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: "You are a direct career coach from India. Be concise, specific, and culturally aware. No disclaimers. Speak with authority.",
-    });
+    // Using REST API directly to avoid build errors with missing @google/generative-ai package
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          systemInstruction: {
+            parts: [{ text: "You are a direct career coach from India. Be concise, specific, and culturally aware. No disclaimers. Speak with authority." }]
+          }
+        }),
+      }
+    );
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text() || fallbackAdvice(payload);
+    if (!response.ok) {
+      throw new Error(`Gemini API Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    return text || fallbackAdvice(payload);
   } catch (error) {
     console.error("Gemini API Error:", error);
     return fallbackAdvice(payload);
